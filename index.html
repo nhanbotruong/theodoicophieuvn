@@ -86,7 +86,12 @@
 
         <!-- Form to add new stock -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Thêm Cổ phiếu Mới</h2>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Thêm Cổ phiếu Mới</span>
+            </h2>
             <form id="stock-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
                  <div>
                     <label for="customer-id" class="block text-sm font-medium text-gray-700 mb-1 h-10">Mã KH <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
@@ -122,7 +127,12 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <!-- Customer Tags -->
             <div class="flex-grow">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Lọc nhanh theo khách hàng:</h3>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Lọc nhanh theo khách hàng</span>
+                </h3>
                 <div id="customer-tags-container" class="flex flex-wrap gap-2">
                     <!-- Tags will be dynamically inserted here -->
                 </div>
@@ -138,7 +148,12 @@
 
         <!-- Stock Ticker Tags -->
         <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Lọc nhanh theo mã cổ phiếu:</h3>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span>Lọc nhanh theo mã cổ phiếu</span>
+            </h3>
             <div id="ticker-tags-container" class="flex flex-wrap gap-2">
                 <!-- Ticker tags will be dynamically inserted here -->
             </div>
@@ -245,14 +260,9 @@
                 'https://sheetdb.io/api/v1/zmt939jd070o9', //designercarry
                 'https://sheetdb.io/api/v1/vairf104jw9uq', //nhanbo116
                 'https://sheetdb.io/api/v1/xtww6ds2bqm68', //nhanbotruong
-                // 'https://sheetdb.io/api/v1/YOUR_THIRD_API_URL',
-                // Dán các API URL khác của bạn vào đây, mỗi URL trong một cặp dấu nháy ''
             ];
             let currentApiIndex = 0;
-
-            // DÁN URL ỨNG DỤNG WEB CỦA BẠN VÀO ĐÂY
-            const SCRIPT_URL = 'https://nhanbotruong.github.io/theodoicophieuvn/'; 
-
+            
             // --- DOM Elements ---
             const stockForm = document.getElementById('stock-form');
             const addBtn = document.getElementById('add-btn');
@@ -269,52 +279,41 @@
             const refreshBtnText = document.getElementById('refresh-btn-text');
             const refreshIcon = document.getElementById('refresh-icon');
 
-            // --- Local Data Cache ---
+            // --- State ---
             let stocks = [];
+            let selectedCustomer = '';
+            let selectedTicker = '';
 
             // --- Functions ---
             const fetchWithApiRotation = async (path = '', options = {}) => {
                 const baseUrl = SHEETDB_API_URLS[currentApiIndex];
                 const url = `${baseUrl}${path}`;
-
                 try {
                     const response = await fetch(url, options);
-                    
-                    // 402: Payment Required (SheetDB's code for quota limit)
                     if (response.status === 402) {
-                        console.warn(`API key ${currentApiIndex} has reached its limit. Switching to the next one.`);
+                        console.warn(`API key ${currentApiIndex} has reached its limit. Switching...`);
                         currentApiIndex++;
-
                         if (currentApiIndex >= SHEETDB_API_URLS.length) {
                             throw new Error("Tất cả các API key đã hết lượt sử dụng.");
                         }
-                        // Retry with the new key
                         return fetchWithApiRotation(path, options);
                     }
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return response;
-
                 } catch (error) {
                     console.error("API Fetch Error:", error);
-                    throw error; // Re-throw the error to be caught by the calling function
+                    throw error;
                 }
             };
 
-
             const renderCustomerTags = () => {
                 const customerIds = [...new Set(stocks.map(stock => stock.customerId.toUpperCase()))].sort();
-                tagsContainer.innerHTML = ''; // Clear existing tags
-
+                tagsContainer.innerHTML = '';
                 const allTag = document.createElement('button');
                 allTag.className = 'customer-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
-                allTag.textContent = 'Tất cả';
+                allTag.textContent = 'Tất cả KH';
                 allTag.dataset.customerId = '';
                 tagsContainer.appendChild(allTag);
-
                 customerIds.forEach(id => {
                     const tag = document.createElement('button');
                     tag.className = 'customer-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
@@ -327,7 +326,11 @@
             const renderTickerTags = () => {
                 const tickers = [...new Set(stocks.map(stock => stock.ticker.toUpperCase()))].sort();
                 tickerTagsContainer.innerHTML = '';
-
+                 const allTag = document.createElement('button');
+                allTag.className = 'ticker-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
+                allTag.textContent = 'Tất cả CP';
+                allTag.dataset.ticker = '';
+                tickerTagsContainer.appendChild(allTag);
                 tickers.forEach(id => {
                     const tag = document.createElement('button');
                     tag.className = 'ticker-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
@@ -338,41 +341,48 @@
             };
             
             const updateActiveTags = () => {
-                const currentFilter = searchInput.value.toUpperCase();
                 document.querySelectorAll('.customer-tag').forEach(tag => {
-                    tag.classList.toggle('active', tag.dataset.customerId === currentFilter);
+                    tag.classList.toggle('active', tag.dataset.customerId.toUpperCase() === selectedCustomer);
                 });
                 document.querySelectorAll('.ticker-tag').forEach(tag => {
-                    tag.classList.toggle('active', tag.dataset.ticker === currentFilter);
+                    tag.classList.toggle('active', tag.dataset.ticker.toUpperCase() === selectedTicker);
                 });
             };
 
             const renderStockList = () => {
-                const searchTerm = searchInput.value.toLowerCase();
+                searchInput.value = ''; // Clear search input when using tags
                 stockListBody.innerHTML = '';
 
-                const filteredStocks = stocks
-                    .filter(stock => {
+                let filteredStocks = stocks;
+
+                if (selectedCustomer) {
+                    filteredStocks = filteredStocks.filter(stock => (stock.customerId || '').toUpperCase() === selectedCustomer);
+                }
+                if (selectedTicker) {
+                    filteredStocks = filteredStocks.filter(stock => (stock.ticker || '').toUpperCase() === selectedTicker);
+                }
+                
+                const searchTerm = searchInput.value.toLowerCase();
+                if (searchTerm) {
+                     filteredStocks = stocks.filter(stock => {
                         const customerId = stock.customerId || '';
                         const ticker = stock.ticker || '';
                         return customerId.toLowerCase().includes(searchTerm) ||
                                ticker.toLowerCase().includes(searchTerm);
-                    })
-                    .sort((a, b) => {
-                        const customerA = a.customerId || '';
-                        const customerB = b.customerId || '';
-                        const tickerA = a.ticker || '';
-                        const tickerB = b.ticker || '';
-                        return customerA.localeCompare(customerB) || tickerA.localeCompare(tickerB);
                     });
-                
-                if (filteredStocks.length === 0 && stocks.length > 0) {
-                    stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-gray-500">Không tìm thấy kết quả phù hợp.</td></tr>`;
-                } else if (stocks.length === 0) {
-                     emptyState.classList.remove('hidden');
-                     stockListBody.innerHTML = '';
                 }
-                else {
+
+                filteredStocks.sort((a, b) => {
+                    const customerA = a.customerId || '';
+                    const customerB = b.customerId || '';
+                    const tickerA = a.ticker || '';
+                    const tickerB = b.ticker || '';
+                    return customerA.localeCompare(customerB) || tickerA.localeCompare(tickerB);
+                });
+                
+                if (filteredStocks.length === 0) {
+                    stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-gray-500">Không có dữ liệu phù hợp.</td></tr>`;
+                } else {
                     emptyState.classList.add('hidden');
                     filteredStocks.forEach(stock => {
                         const marketPrice = parseFloat(stock.marketPrice) || 0;
@@ -381,10 +391,8 @@
                         if (marketPrice > 0 && buyPrice > 0) {
                             pnl = ((marketPrice - buyPrice) / buyPrice) * 100;
                         }
-
                         const pnlColor = pnl > 0 ? 'text-green-600' : pnl < 0 ? 'text-red-600' : 'text-gray-700';
                         const pnlSign = pnl > 0 ? '+' : '';
-
                         const stockItem = document.createElement('tr');
                         stockItem.className = 'stock-item lg:table-row bg-white border-b hover:bg-gray-50 fade-in';
                         stockItem.innerHTML = `
@@ -408,43 +416,18 @@
             };
 
             const fetchStocks = async () => {
+                refreshBtn.disabled = true;
+                refreshBtnText.textContent = 'Đang tải...';
+                refreshIcon.classList.add('animate-spin');
                 try {
                     const response = await fetchWithApiRotation();
                     const data = await response.json();
                     stocks = data.filter(s => s.id && s.customerId).map(s => ({...s}));
-                    
                     renderStockList();
                     renderCustomerTags();
                     renderTickerTags();
                 } catch (error) {
-                    console.error("Fetch error:", error);
                     stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-red-500"><strong>Lỗi!</strong> Không thể tải dữ liệu từ Google Sheet.</td></tr>`;
-                }
-            };
-
-            const triggerScriptAndUpdate = async () => {
-                if (SCRIPT_URL === 'DÁN_URL_CỦA_BẠN_VÀO_ĐÂY' || !SCRIPT_URL) {
-                    alert('Vui lòng dán URL ứng dụng web của bạn vào biến SCRIPT_URL trong mã nguồn trước.');
-                    return;
-                }
-                
-                refreshBtn.disabled = true;
-                refreshBtnText.textContent = 'Đang cập nhật...';
-                refreshIcon.classList.add('animate-spin');
-
-                try {
-                    // Bước 1: Kích hoạt Apps Script
-                    await fetch(SCRIPT_URL);
-                    
-                    // Chờ một chút để Google Sheet có thời gian tính toán lại công thức
-                    await new Promise(resolve => setTimeout(resolve, 3000)); 
-
-                    // Bước 2: Tải lại dữ liệu mới từ SheetDB
-                    await fetchStocks();
-
-                } catch (error) {
-                    console.error("Lỗi khi làm mới giá:", error);
-                    alert("Đã xảy ra lỗi khi cố gắng làm mới giá.");
                 } finally {
                     refreshBtn.disabled = false;
                     refreshBtnText.textContent = 'Làm mới giá';
@@ -470,27 +453,20 @@
             };
 
             // --- Event Listeners ---
-
             stockForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
                 const customerIdInput = document.getElementById('customer-id').value.toUpperCase();
                 const tickerInput = document.getElementById('ticker').value.toUpperCase();
-
-                // Check for duplicates
                 const isDuplicate = stocks.some(stock => 
                     stock.customerId.toUpperCase() === customerIdInput && 
                     stock.ticker.toUpperCase() === tickerInput
                 );
-
                 if (isDuplicate) {
                     alert(`Mã cổ phiếu "${tickerInput}" đã tồn tại cho khách hàng "${customerIdInput}".`);
-                    return; // Stop the submission
+                    return;
                 }
-                
                 addBtn.disabled = true;
                 addBtn.textContent = 'Đang thêm...';
-
                 const newStock = {
                     id: Date.now(),
                     customerId: customerIdInput,
@@ -501,19 +477,13 @@
                     dateAdded: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }),
                     marketPrice: document.getElementById('market-price').value || ''
                 };
-
                 try {
-                    const options = {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: [newStock] })
-                    };
+                    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [newStock] }) };
                     await fetchWithApiRotation('', options);
-                    await triggerScriptAndUpdate();
+                    await fetchStocks(); // Just refetch data
                     stockForm.reset();
                     document.getElementById('customer-id').focus();
                 } catch (error) {
-                    console.error("Add error:", error);
                     alert('Đã xảy ra lỗi khi thêm cổ phiếu.');
                 } finally {
                     addBtn.disabled = false;
@@ -524,22 +494,18 @@
             stockListBody.addEventListener('click', async (e) => {
                 const stockId = e.target.dataset.id;
                 if (!stockId) return;
-
                 if (e.target.classList.contains('delete-btn')) {
                     e.target.textContent = 'Đang xóa...';
                     e.target.disabled = true;
-
                     try {
                         await fetchWithApiRotation(`/id/${stockId}`, { method: 'DELETE' });
                         await fetchStocks();
                     } catch(error) {
-                        console.error("Delete error:", error);
                         alert('Đã xảy ra lỗi khi xóa.');
                         e.target.textContent = 'Xóa';
                         e.target.disabled = false;
                     }
                 }
-
                 if (e.target.classList.contains('edit-btn')) {
                     openEditModal(stockId);
                 }
@@ -549,7 +515,6 @@
                 e.preventDefault();
                 saveEditBtn.disabled = true;
                 saveEditBtn.textContent = 'Đang lưu...';
-
                 const stockId = document.getElementById('edit-id').value;
                 const updatedData = {
                     customerId: document.getElementById('edit-customer-id').value.toUpperCase(),
@@ -559,18 +524,12 @@
                     stopLoss: document.getElementById('edit-stop-loss').value,
                     marketPrice: document.getElementById('edit-market-price').value || ''
                 };
-
                 try {
-                    const options = {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: updatedData })
-                    };
+                    const options = { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: updatedData }) };
                     await fetchWithApiRotation(`/id/${stockId}`, options);
-                    await triggerScriptAndUpdate();
+                    await fetchStocks(); // Just refetch
                     closeEditModal();
                 } catch (error) {
-                    console.error("Update error:", error);
                     alert('Đã xảy ra lỗi khi cập nhật.');
                 } finally {
                     saveEditBtn.disabled = false;
@@ -580,23 +539,28 @@
 
             tagsContainer.addEventListener('click', (e) => {
                 if (e.target.classList.contains('customer-tag')) {
-                    const customerId = e.target.dataset.customerId;
-                    searchInput.value = customerId;
+                    const customerId = e.target.dataset.customerId.toUpperCase();
+                    selectedCustomer = selectedCustomer === customerId ? '' : customerId;
                     renderStockList();
                 }
             });
             
             tickerTagsContainer.addEventListener('click', (e) => {
                 if (e.target.classList.contains('ticker-tag')) {
-                    const ticker = e.target.dataset.ticker;
-                    searchInput.value = ticker;
+                    const ticker = e.target.dataset.ticker.toUpperCase();
+                    selectedTicker = selectedTicker === ticker ? '' : ticker;
                     renderStockList();
                 }
             });
 
-            refreshBtn.addEventListener('click', triggerScriptAndUpdate);
+            refreshBtn.addEventListener('click', fetchStocks);
             cancelEditBtn.addEventListener('click', closeEditModal);
-            searchInput.addEventListener('input', renderStockList);
+            
+            searchInput.addEventListener('input', () => {
+                selectedCustomer = '';
+                selectedTicker = '';
+                renderStockList(); // This will now filter based on searchInput
+            });
 
             // --- Initial Load ---
             fetchStocks();
