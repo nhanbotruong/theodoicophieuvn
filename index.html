@@ -87,7 +87,7 @@
         <!-- Form to add new stock -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800">Thêm Cổ phiếu Mới</h2>
-            <form id="stock-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+            <form id="stock-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
                  <div>
                     <label for="customer-id" class="block text-sm font-medium text-gray-700 mb-1">Mã KH</label>
                     <input type="text" id="customer-id" placeholder="VD: KH01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -100,13 +100,17 @@
                     <label for="buy-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mua</label>
                     <input type="number" id="buy-price" placeholder="28.50" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
+                 <div>
+                    <label for="market-price" class="block text-sm font-medium text-gray-700 mb-1">Giá TT (Tùy chọn)</label>
+                    <input type="number" id="market-price" placeholder="29.50" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
                 <div>
                     <label for="target-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mục Tiêu</label>
-                    <input type="number" id="target-price" placeholder="35.00" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="number" id="target-price" placeholder="35.00" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label for="stop-loss" class="block text-sm font-medium text-gray-700 mb-1">Giá Cắt Lỗ</label>
-                    <input type="number" id="stop-loss" placeholder="25.00" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="number" id="stop-loss" placeholder="25.00" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <button type="submit" id="add-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors">
                     Thêm
@@ -207,12 +211,16 @@
                             <input type="number" id="edit-buy-price" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
+                            <label for="edit-market-price" class="block text-sm font-medium text-gray-700 mb-1">Giá TT (Tùy chọn)</label>
+                            <input type="number" id="edit-market-price" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
                             <label for="edit-target-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mục Tiêu</label>
-                            <input type="number" id="edit-target-price" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="edit-target-price" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="edit-stop-loss" class="block text-sm font-medium text-gray-700 mb-1">Giá Cắt Lỗ</label>
-                            <input type="number" id="edit-stop-loss" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="edit-stop-loss" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     <div class="items-center px-4 py-3 mt-6 flex justify-end gap-3 bg-gray-50 -mx-5 -mb-5 rounded-b-xl">
@@ -411,6 +419,7 @@
                 document.getElementById('edit-customer-id').value = stock.customerId;
                 document.getElementById('edit-ticker').value = stock.ticker;
                 document.getElementById('edit-buy-price').value = stock.buyPrice;
+                document.getElementById('edit-market-price').value = stock.marketPrice || '';
                 document.getElementById('edit-target-price').value = stock.targetPrice;
                 document.getElementById('edit-stop-loss').value = stock.stopLoss;
                 editModal.classList.remove('hidden');
@@ -424,17 +433,33 @@
 
             stockForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                
+                const customerIdInput = document.getElementById('customer-id').value.toUpperCase();
+                const tickerInput = document.getElementById('ticker').value.toUpperCase();
+
+                // Check for duplicates
+                const isDuplicate = stocks.some(stock => 
+                    stock.customerId.toUpperCase() === customerIdInput && 
+                    stock.ticker.toUpperCase() === tickerInput
+                );
+
+                if (isDuplicate) {
+                    alert(`Mã cổ phiếu "${tickerInput}" đã tồn tại cho khách hàng "${customerIdInput}".`);
+                    return; // Stop the submission
+                }
+                
                 addBtn.disabled = true;
                 addBtn.textContent = 'Đang thêm...';
 
                 const newStock = {
                     id: Date.now(),
-                    customerId: document.getElementById('customer-id').value.toUpperCase(),
-                    ticker: document.getElementById('ticker').value.toUpperCase(),
+                    customerId: customerIdInput,
+                    ticker: tickerInput,
                     buyPrice: document.getElementById('buy-price').value,
                     targetPrice: document.getElementById('target-price').value,
                     stopLoss: document.getElementById('stop-loss').value,
-                    dateAdded: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' })
+                    dateAdded: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }),
+                    marketPrice: document.getElementById('market-price').value || ''
                 };
 
                 try {
@@ -493,6 +518,7 @@
                     buyPrice: document.getElementById('edit-buy-price').value,
                     targetPrice: document.getElementById('edit-target-price').value,
                     stopLoss: document.getElementById('edit-stop-loss').value,
+                    marketPrice: document.getElementById('edit-market-price').value || ''
                 };
 
                 try {
@@ -539,4 +565,3 @@
     </script>
 </body>
 </html>
-
