@@ -73,6 +73,19 @@
             background-color: #2563eb;
             color: white;
         }
+        .delete-customer-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            margin-left: 0.25rem;
+            transition: background-color 0.2s;
+        }
+        .delete-customer-btn:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -172,7 +185,12 @@
                     <tr>
                         <th scope="col" class="px-6 py-3">Mã KH</th>
                         <th scope="col" class="px-6 py-3">Mã CP</th>
-                        <th scope="col" class="px-6 py-3">Ngày giờ thêm</th>
+                        <th scope="col" class="px-6 py-3">
+                            <button id="sort-date-btn" class="flex items-center gap-1 group">
+                                <span>Ngày giờ thêm</span>
+                                <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+                            </button>
+                        </th>
                         <th scope="col" class="px-6 py-3">Giá Mua</th>
                         <th scope="col" class="px-6 py-3">Giá TT</th>
                         <th scope="col" class="px-6 py-3">Lãi/Lỗ</th>
@@ -251,6 +269,29 @@
         </div>
     </div>
 
+    <!-- Confirm Delete Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4" id="confirm-title">Xóa khách hàng?</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500" id="confirm-message">Bạn có chắc chắn muốn xóa tất cả dữ liệu của khách hàng này không? Hành động này không thể hoàn tác.</p>
+                </div>
+                <div class="items-center px-4 py-3 mt-4 flex justify-center gap-3">
+                    <button id="cancel-confirm-btn" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+                        Hủy
+                    </button>
+                    <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 font-semibold">
+                        Xác nhận Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Configuration ---
@@ -276,13 +317,19 @@
             const tagsContainer = document.getElementById('customer-tags-container');
             const tickerTagsContainer = document.getElementById('ticker-tags-container');
             const refreshBtn = document.getElementById('refresh-prices-btn');
-            const refreshBtnText = document.getElementById('refresh-btn-text');
-            const refreshIcon = document.getElementById('refresh-icon');
+            const sortDateBtn = document.getElementById('sort-date-btn');
+            const confirmModal = document.getElementById('confirm-modal');
+            const confirmMessage = document.getElementById('confirm-message');
+            const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
 
             // --- State ---
             let stocks = [];
             let selectedCustomer = '';
             let selectedTicker = '';
+            let dateSortDirection = 'desc'; // 'asc' or 'desc'
+            let newlyAdded = { customers: {}, tickers: {} };
+            let onConfirmCallback = null;
 
             // --- Functions ---
             const fetchWithApiRotation = async (path = '', options = {}) => {
@@ -306,6 +353,33 @@
                 }
             };
 
+            const loadAndCleanNewlyAdded = () => {
+                const storedData = JSON.parse(localStorage.getItem('newlyAdded')) || { customers: {}, tickers: {} };
+                const now = Date.now();
+                const oneDay = 24 * 60 * 60 * 1000;
+                
+                Object.keys(storedData.customers).forEach(key => {
+                    if (now - storedData.customers[key] > oneDay) {
+                        delete storedData.customers[key];
+                    }
+                });
+                Object.keys(storedData.tickers).forEach(key => {
+                    if (now - storedData.tickers[key] > oneDay) {
+                        delete storedData.tickers[key];
+                    }
+                });
+                
+                localStorage.setItem('newlyAdded', JSON.stringify(storedData));
+                newlyAdded = storedData;
+            };
+
+            const parseVietnameseDate = (dateString) => {
+                if (!dateString) return new Date(0);
+                const parts = dateString.match(/(\d{2}):(\d{2}):(\d{2}) (\d{1,2})\/(\d{1,2})\/(\d{2})/);
+                if (!parts) return new Date(0);
+                return new Date(`20${parts[6]}`, parts[5] - 1, parts[4], parts[1], parts[2], parts[3]);
+            };
+
             const renderCustomerTags = () => {
                 const customerIds = [...new Set(stocks.map(stock => stock.customerId.toUpperCase()))].sort();
                 tagsContainer.innerHTML = '';
@@ -316,9 +390,26 @@
                 tagsContainer.appendChild(allTag);
                 customerIds.forEach(id => {
                     const tag = document.createElement('button');
-                    tag.className = 'customer-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
-                    tag.textContent = id;
+                    tag.className = 'customer-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-1';
                     tag.dataset.customerId = id;
+                    
+                    const text = document.createElement('span');
+                    text.textContent = id;
+                    tag.appendChild(text);
+
+                    if(newlyAdded.customers[id]) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'text-xs font-semibold text-white bg-green-500 px-1.5 py-0.5 rounded-full';
+                        newBadge.textContent = 'Mới';
+                        tag.appendChild(newBadge);
+                    }
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-customer-btn';
+                    deleteBtn.dataset.deleteCustomer = id;
+                    deleteBtn.innerHTML = `<svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+                    tag.appendChild(deleteBtn);
+
                     tagsContainer.appendChild(tag);
                 });
             };
@@ -333,9 +424,19 @@
                 tickerTagsContainer.appendChild(allTag);
                 tickers.forEach(id => {
                     const tag = document.createElement('button');
-                    tag.className = 'ticker-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
-                    tag.textContent = id;
+                    tag.className = 'ticker-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-1';
                     tag.dataset.ticker = id;
+
+                    const text = document.createElement('span');
+                    text.textContent = id;
+                    tag.appendChild(text);
+
+                    if(newlyAdded.tickers[id]) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'text-xs font-semibold text-white bg-green-500 px-1.5 py-0.5 rounded-full';
+                        newBadge.textContent = 'Mới';
+                        tag.appendChild(newBadge);
+                    }
                     tickerTagsContainer.appendChild(tag);
                 });
             };
@@ -350,11 +451,18 @@
             };
 
             const renderStockList = () => {
-                searchInput.value = ''; // Clear search input when using tags
                 stockListBody.innerHTML = '';
 
-                let filteredStocks = stocks;
+                let filteredStocks = [...stocks];
 
+                // 1. Sort
+                filteredStocks.sort((a, b) => {
+                    const dateA = parseVietnameseDate(a.dateAdded);
+                    const dateB = parseVietnameseDate(b.dateAdded);
+                    return dateSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+                });
+
+                // 2. Filter by tags
                 if (selectedCustomer) {
                     filteredStocks = filteredStocks.filter(stock => (stock.customerId || '').toUpperCase() === selectedCustomer);
                 }
@@ -362,6 +470,7 @@
                     filteredStocks = filteredStocks.filter(stock => (stock.ticker || '').toUpperCase() === selectedTicker);
                 }
                 
+                // 3. Filter by search input
                 const searchTerm = searchInput.value.toLowerCase();
                 if (searchTerm) {
                      filteredStocks = stocks.filter(stock => {
@@ -371,14 +480,6 @@
                                ticker.toLowerCase().includes(searchTerm);
                     });
                 }
-
-                filteredStocks.sort((a, b) => {
-                    const customerA = a.customerId || '';
-                    const customerB = b.customerId || '';
-                    const tickerA = a.ticker || '';
-                    const tickerB = b.ticker || '';
-                    return customerA.localeCompare(customerB) || tickerA.localeCompare(tickerB);
-                });
                 
                 if (filteredStocks.length === 0) {
                     stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-gray-500">Không có dữ liệu phù hợp.</td></tr>`;
@@ -417,8 +518,7 @@
 
             const fetchStocks = async () => {
                 refreshBtn.disabled = true;
-                refreshBtnText.textContent = 'Đang tải...';
-                refreshIcon.classList.add('animate-spin');
+                refreshBtn.textContent = 'Đang tải...';
                 try {
                     const response = await fetchWithApiRotation();
                     const data = await response.json();
@@ -430,8 +530,7 @@
                     stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-red-500"><strong>Lỗi!</strong> Không thể tải dữ liệu từ Google Sheet.</td></tr>`;
                 } finally {
                     refreshBtn.disabled = false;
-                    refreshBtnText.textContent = 'Làm mới giá';
-                    refreshIcon.classList.remove('animate-spin');
+                    refreshBtn.innerHTML = `<svg id="refresh-icon" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9"></path></svg> <span id="refresh-btn-text">Làm mới giá</span>`;
                 }
             };
 
@@ -447,9 +546,14 @@
                 document.getElementById('edit-stop-loss').value = stock.stopLoss;
                 editModal.classList.remove('hidden');
             };
+            
+            const closeEditModal = () => { editModal.classList.add('hidden'); };
+            const closeConfirmModal = () => { confirmModal.classList.add('hidden'); onConfirmCallback = null; };
 
-            const closeEditModal = () => {
-                editModal.classList.add('hidden');
+            const openConfirmModal = (message, onConfirm) => {
+                confirmMessage.textContent = message;
+                onConfirmCallback = onConfirm;
+                confirmModal.classList.remove('hidden');
             };
 
             // --- Event Listeners ---
@@ -465,6 +569,17 @@
                     alert(`Mã cổ phiếu "${tickerInput}" đã tồn tại cho khách hàng "${customerIdInput}".`);
                     return;
                 }
+
+                const existingCustomers = [...new Set(stocks.map(s => s.customerId.toUpperCase()))];
+                if (!existingCustomers.includes(customerIdInput)) {
+                    newlyAdded.customers[customerIdInput] = Date.now();
+                }
+                const existingTickers = [...new Set(stocks.map(s => s.ticker.toUpperCase()))];
+                if (!existingTickers.includes(tickerInput)) {
+                   newlyAdded.tickers[tickerInput] = Date.now();
+                }
+                localStorage.setItem('newlyAdded', JSON.stringify(newlyAdded));
+
                 addBtn.disabled = true;
                 addBtn.textContent = 'Đang thêm...';
                 const newStock = {
@@ -474,13 +589,13 @@
                     buyPrice: document.getElementById('buy-price').value,
                     targetPrice: document.getElementById('target-price').value,
                     stopLoss: document.getElementById('stop-loss').value,
-                    dateAdded: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }),
+                    dateAdded: new Date().toLocaleString('vi-VN', { timeStyle: 'medium', dateStyle: 'short' }).replace(/, /g, ' '),
                     marketPrice: document.getElementById('market-price').value || ''
                 };
                 try {
                     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [newStock] }) };
                     await fetchWithApiRotation('', options);
-                    await fetchStocks(); // Just refetch data
+                    await fetchStocks(); 
                     stockForm.reset();
                     document.getElementById('customer-id').focus();
                 } catch (error) {
@@ -527,7 +642,7 @@
                 try {
                     const options = { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: updatedData }) };
                     await fetchWithApiRotation(`/id/${stockId}`, options);
-                    await fetchStocks(); // Just refetch
+                    await fetchStocks(); 
                     closeEditModal();
                 } catch (error) {
                     alert('Đã xảy ra lỗi khi cập nhật.');
@@ -537,17 +652,33 @@
                 }
             });
 
-            tagsContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('customer-tag')) {
-                    const customerId = e.target.dataset.customerId.toUpperCase();
+            tagsContainer.addEventListener('click', async (e) => {
+                const deleteBtn = e.target.closest('.delete-customer-btn');
+                if (deleteBtn) {
+                    e.stopPropagation(); // Ngăn sự kiện click vào tag cha
+                    const customerId = deleteBtn.dataset.deleteCustomer;
+                    const message = `Bạn có chắc chắn muốn xóa tất cả dữ liệu của khách hàng "${customerId}" không? Hành động này không thể hoàn tác.`;
+                    openConfirmModal(message, async () => {
+                        try {
+                            await fetchWithApiRotation(`/customerId/${customerId}`, { method: 'DELETE' });
+                            await fetchStocks();
+                        } catch (error) {
+                            alert(`Đã xảy ra lỗi khi xóa khách hàng ${customerId}.`);
+                        }
+                    });
+                    return;
+                }
+
+                if (e.target.closest('.customer-tag')) {
+                    const customerId = e.target.closest('.customer-tag').dataset.customerId.toUpperCase();
                     selectedCustomer = selectedCustomer === customerId ? '' : customerId;
                     renderStockList();
                 }
             });
             
             tickerTagsContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('ticker-tag')) {
-                    const ticker = e.target.dataset.ticker.toUpperCase();
+                if (e.target.closest('.ticker-tag')) {
+                    const ticker = e.target.closest('.ticker-tag').dataset.ticker.toUpperCase();
                     selectedTicker = selectedTicker === ticker ? '' : ticker;
                     renderStockList();
                 }
@@ -559,10 +690,24 @@
             searchInput.addEventListener('input', () => {
                 selectedCustomer = '';
                 selectedTicker = '';
-                renderStockList(); // This will now filter based on searchInput
+                renderStockList();
+            });
+
+            sortDateBtn.addEventListener('click', () => {
+                dateSortDirection = dateSortDirection === 'desc' ? 'asc' : 'desc';
+                renderStockList();
+            });
+
+            cancelConfirmBtn.addEventListener('click', closeConfirmModal);
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (typeof onConfirmCallback === 'function') {
+                    onConfirmCallback();
+                }
+                closeConfirmModal();
             });
 
             // --- Initial Load ---
+            loadAndCleanNewlyAdded();
             fetchStocks();
         });
     </script>
