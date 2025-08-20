@@ -239,7 +239,17 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Configuration ---
-            const SHEETDB_API_URL = 'https://sheetdb.io/api/v1/2y27zybned5p0';
+            const SHEETDB_API_URLS = [
+                'https://sheetdb.io/api/v1/2y27zybned5p0', //truongtrongnhan2912
+                'https://sheetdb.io/api/v1/01ii57rok66mx', //nhanbo29122001
+                'https://sheetdb.io/api/v1/zmt939jd070o9', //designercarry
+                'https://sheetdb.io/api/v1/vairf104jw9uq', //nhanbo116
+                'https://sheetdb.io/api/v1/xtww6ds2bqm68', //nhanbotruong
+                // 'https://sheetdb.io/api/v1/YOUR_THIRD_API_URL',
+                // Dán các API URL khác của bạn vào đây, mỗi URL trong một cặp dấu nháy ''
+            ];
+            let currentApiIndex = 0;
+
             // DÁN URL ỨNG DỤNG WEB CỦA BẠN VÀO ĐÂY
             const SCRIPT_URL = 'https://nhanbotruong.github.io/theodoicophieuvn/'; 
 
@@ -263,6 +273,37 @@
             let stocks = [];
 
             // --- Functions ---
+            const fetchWithApiRotation = async (path = '', options = {}) => {
+                const baseUrl = SHEETDB_API_URLS[currentApiIndex];
+                const url = `${baseUrl}${path}`;
+
+                try {
+                    const response = await fetch(url, options);
+                    
+                    // 402: Payment Required (SheetDB's code for quota limit)
+                    if (response.status === 402) {
+                        console.warn(`API key ${currentApiIndex} has reached its limit. Switching to the next one.`);
+                        currentApiIndex++;
+
+                        if (currentApiIndex >= SHEETDB_API_URLS.length) {
+                            throw new Error("Tất cả các API key đã hết lượt sử dụng.");
+                        }
+                        // Retry with the new key
+                        return fetchWithApiRotation(path, options);
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    return response;
+
+                } catch (error) {
+                    console.error("API Fetch Error:", error);
+                    throw error; // Re-throw the error to be caught by the calling function
+                }
+            };
+
 
             const renderCustomerTags = () => {
                 const customerIds = [...new Set(stocks.map(stock => stock.customerId.toUpperCase()))].sort();
@@ -368,8 +409,7 @@
 
             const fetchStocks = async () => {
                 try {
-                    const response = await fetch(SHEETDB_API_URL);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const response = await fetchWithApiRotation();
                     const data = await response.json();
                     stocks = data.filter(s => s.id && s.customerId).map(s => ({...s}));
                     
@@ -463,12 +503,12 @@
                 };
 
                 try {
-                    const response = await fetch(SHEETDB_API_URL, {
+                    const options = {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data: [newStock] })
-                    });
-                    if (!response.ok) throw new Error('Failed to add stock.');
+                    };
+                    await fetchWithApiRotation('', options);
                     await triggerScriptAndUpdate();
                     stockForm.reset();
                     document.getElementById('customer-id').focus();
@@ -490,8 +530,7 @@
                     e.target.disabled = true;
 
                     try {
-                        const response = await fetch(`${SHEETDB_API_URL}/id/${stockId}`, { method: 'DELETE' });
-                        if (!response.ok) throw new Error('Failed to delete.');
+                        await fetchWithApiRotation(`/id/${stockId}`, { method: 'DELETE' });
                         await fetchStocks();
                     } catch(error) {
                         console.error("Delete error:", error);
@@ -522,12 +561,12 @@
                 };
 
                 try {
-                    const response = await fetch(`${SHEETDB_API_URL}/id/${stockId}`, {
+                    const options = {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data: updatedData })
-                    });
-                    if (!response.ok) throw new Error('Failed to update.');
+                    };
+                    await fetchWithApiRotation(`/id/${stockId}`, options);
                     await triggerScriptAndUpdate();
                     closeEditModal();
                 } catch (error) {
