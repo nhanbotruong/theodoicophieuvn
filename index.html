@@ -89,27 +89,27 @@
             <h2 class="text-2xl font-semibold mb-4 text-gray-800">Thêm Cổ phiếu Mới</h2>
             <form id="stock-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
                  <div>
-                    <label for="customer-id" class="block text-sm font-medium text-gray-700 mb-1">Mã KH</label>
+                    <label for="customer-id" class="block text-sm font-medium text-gray-700 mb-1 h-10">Mã KH <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
                     <input type="text" id="customer-id" placeholder="VD: KH01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="ticker" class="block text-sm font-medium text-gray-700 mb-1">Mã CP</label>
+                    <label for="ticker" class="block text-sm font-medium text-gray-700 mb-1 h-10">Mã CP <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
                     <input type="text" id="ticker" placeholder="VD: HPG" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="buy-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mua</label>
+                    <label for="buy-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Mua <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
                     <input type="number" id="buy-price" placeholder="28.50" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                  <div>
-                    <label for="market-price" class="block text-sm font-medium text-gray-700 mb-1">Giá TT (Tùy chọn)</label>
+                    <label for="market-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá TT <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
                     <input type="number" id="market-price" placeholder="29.50" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="target-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mục Tiêu</label>
+                    <label for="target-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Mục Tiêu <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
                     <input type="number" id="target-price" placeholder="35.00" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="stop-loss" class="block text-sm font-medium text-gray-700 mb-1">Giá Cắt Lỗ</label>
+                    <label for="stop-loss" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Cắt Lỗ <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
                     <input type="number" id="stop-loss" placeholder="25.00" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <button type="submit" id="add-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors">
@@ -199,27 +199,27 @@
                     <input type="hidden" id="edit-id">
                     <div class="grid grid-cols-1 gap-4 text-left">
                         <div>
-                            <label for="edit-customer-id" class="block text-sm font-medium text-gray-700 mb-1">Mã KH</label>
+                            <label for="edit-customer-id" class="block text-sm font-medium text-gray-700 mb-1 h-10">Mã KH <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
                             <input type="text" id="edit-customer-id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="edit-ticker" class="block text-sm font-medium text-gray-700 mb-1">Mã CP</label>
+                            <label for="edit-ticker" class="block text-sm font-medium text-gray-700 mb-1 h-10">Mã CP <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
                             <input type="text" id="edit-ticker" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="edit-buy-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mua</label>
+                            <label for="edit-buy-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Mua <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
                             <input type="number" id="edit-buy-price" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="edit-market-price" class="block text-sm font-medium text-gray-700 mb-1">Giá TT (Tùy chọn)</label>
+                            <label for="edit-market-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá TT <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
                             <input type="number" id="edit-market-price" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="edit-target-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mục Tiêu</label>
+                            <label for="edit-target-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Mục Tiêu <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
                             <input type="number" id="edit-target-price" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label for="edit-stop-loss" class="block text-sm font-medium text-gray-700 mb-1">Giá Cắt Lỗ</label>
+                            <label for="edit-stop-loss" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Cắt Lỗ <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
                             <input type="number" id="edit-stop-loss" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
