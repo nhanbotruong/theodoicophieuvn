@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình theo dõi Cổ phiếu (Online)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Animation for fadeIn */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Responsive Layout: Card on mobile, Table on desktop */
+        @media (max-width: 1023px) {
+            .stock-table thead {
+                display: none; /* Hide table headers on mobile */
+            }
+            .stock-table .stock-item {
+                display: block; /* Each item is a block-level card */
+                border: 1px solid #e5e7eb;
+                border-radius: 0.75rem;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                background-color: #fff;
+                box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            }
+            .stock-table .stock-cell {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .stock-table .stock-cell:last-child {
+                border-bottom: none;
+            }
+            .stock-table .stock-cell::before {
+                content: attr(data-label); /* Use data-label for cell headers */
+                font-weight: 600;
+                padding-right: 1rem;
+                color: #4b5563;
+            }
+            .stock-table .actions-cell {
+                justify-content: flex-end; /* Align action buttons to the right */
+                gap: 1rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .customer-tag.active, .ticker-tag.active {
+            background-color: #2563eb;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Danh mục Cổ phiếu (Online)</h1>
+            <p class="text-gray-600 mt-2">Sử dụng Google Sheets và API giá thị trường.</p>
+        </header>
+
+        <!-- Form to add new stock -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Thêm Cổ phiếu Mới</h2>
+            <form id="stock-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+                 <div>
+                    <label for="customer-id" class="block text-sm font-medium text-gray-700 mb-1">Mã KH</label>
+                    <input type="text" id="customer-id" placeholder="VD: KH01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="ticker" class="block text-sm font-medium text-gray-700 mb-1">Mã CP</label>
+                    <input type="text" id="ticker" placeholder="VD: HPG" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="buy-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mua</label>
+                    <input type="number" id="buy-price" placeholder="28.50" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="target-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mục Tiêu</label>
+                    <input type="number" id="target-price" placeholder="35.00" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="stop-loss" class="block text-sm font-medium text-gray-700 mb-1">Giá Cắt Lỗ</label>
+                    <input type="number" id="stop-loss" placeholder="25.00" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" id="add-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors">
+                    Thêm
+                </button>
+            </form>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <!-- Customer Tags -->
+            <div class="flex-grow">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Lọc nhanh theo khách hàng:</h3>
+                <div id="customer-tags-container" class="flex flex-wrap gap-2">
+                    <!-- Tags will be dynamically inserted here -->
+                </div>
+            </div>
+            <!-- Refresh Button -->
+            <div class="flex-shrink-0">
+                 <button id="refresh-prices-btn" class="w-full md:w-auto bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-colors flex items-center justify-center gap-2">
+                    <svg id="refresh-icon" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l1.5 1.5A9 9 0 0120.5 15M20 20l-1.5-1.5A9 9 0 003.5 9"></path></svg>
+                    <span id="refresh-btn-text">Làm mới giá</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stock Ticker Tags -->
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Lọc nhanh theo mã cổ phiếu:</h3>
+            <div id="ticker-tags-container" class="flex flex-wrap gap-2">
+                <!-- Ticker tags will be dynamically inserted here -->
+            </div>
+        </div>
+
+
+        <!-- Search/Filter Input -->
+        <div class="mb-4">
+            <input type="text" id="search-customer" placeholder="Hoặc tìm kiếm theo Mã Khách hàng / Mã Cổ phiếu..." class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Stock list table / card container -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+             <table class="stock-table w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 lg:table-header-group">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Mã KH</th>
+                        <th scope="col" class="px-6 py-3">Mã CP</th>
+                        <th scope="col" class="px-6 py-3">Ngày giờ thêm</th>
+                        <th scope="col" class="px-6 py-3">Giá Mua</th>
+                        <th scope="col" class="px-6 py-3">Giá TT</th>
+                        <th scope="col" class="px-6 py-3">Lãi/Lỗ</th>
+                        <th scope="col" class="px-6 py-3">Giá Mục Tiêu</th>
+                        <th scope="col" class="px-6 py-3">Giá Cắt Lỗ</th>
+                        <th scope="col" class="px-6 py-3 text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-list-body">
+                    <!-- Initial Loading State -->
+                    <tr>
+                        <td colspan="9" class="text-center p-8">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="loader"></div>
+                                <p class="mt-4 text-gray-500">Đang tải dữ liệu danh mục...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="empty-state" class="text-center py-12 px-6 hidden">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" /></svg>
+                <h3 id="empty-state-title" class="mt-2 text-sm font-medium text-gray-900">Chưa có cổ phiếu</h3>
+                <p id="empty-state-message" class="mt-1 text-sm text-gray-500">Hãy bắt đầu bằng cách thêm một cổ phiếu mới.</p>
+            </div>
+        </div>
+        
+        <footer class="text-center mt-8 text-sm text-gray-500">
+            <p>Tạo bởi Nhân Trương &copy; 2025</p>
+        </footer>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-2xl leading-6 font-bold text-gray-900 mb-4">Chỉnh sửa thông tin</h3>
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    <div class="grid grid-cols-1 gap-4 text-left">
+                        <div>
+                            <label for="edit-customer-id" class="block text-sm font-medium text-gray-700 mb-1">Mã KH</label>
+                            <input type="text" id="edit-customer-id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-ticker" class="block text-sm font-medium text-gray-700 mb-1">Mã CP</label>
+                            <input type="text" id="edit-ticker" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-buy-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mua</label>
+                            <input type="number" id="edit-buy-price" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-target-price" class="block text-sm font-medium text-gray-700 mb-1">Giá Mục Tiêu</label>
+                            <input type="number" id="edit-target-price" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="edit-stop-loss" class="block text-sm font-medium text-gray-700 mb-1">Giá Cắt Lỗ</label>
+                            <input type="number" id="edit-stop-loss" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="items-center px-4 py-3 mt-6 flex justify-end gap-3 bg-gray-50 -mx-5 -mb-5 rounded-b-xl">
+                        <button id="cancel-edit" type="button" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
+                            Hủy
+                        </button>
+                        <button id="save-edit-btn" type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 font-semibold">
+                            Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Configuration ---
+            const SHEETDB_API_URL = 'https://sheetdb.io/api/v1/2y27zybned5p0';
+            // DÁN URL ỨNG DỤNG WEB CỦA BẠN VÀO ĐÂY
+            const SCRIPT_URL = 'DÁN_URL_CỦA_BẠN_VÀO_ĐÂY'; 
+
+            // --- DOM Elements ---
+            const stockForm = document.getElementById('stock-form');
+            const addBtn = document.getElementById('add-btn');
+            const stockListBody = document.getElementById('stock-list-body');
+            const emptyState = document.getElementById('empty-state');
+            const searchInput = document.getElementById('search-customer');
+            const editModal = document.getElementById('edit-modal');
+            const editForm = document.getElementById('edit-form');
+            const cancelEditBtn = document.getElementById('cancel-edit');
+            const saveEditBtn = document.getElementById('save-edit-btn');
+            const tagsContainer = document.getElementById('customer-tags-container');
+            const tickerTagsContainer = document.getElementById('ticker-tags-container');
+            const refreshBtn = document.getElementById('refresh-prices-btn');
+            const refreshBtnText = document.getElementById('refresh-btn-text');
+            const refreshIcon = document.getElementById('refresh-icon');
+
+            // --- Local Data Cache ---
+            let stocks = [];
+
+            // --- Functions ---
+
+            const renderCustomerTags = () => {
+                const customerIds = [...new Set(stocks.map(stock => stock.customerId.toUpperCase()))].sort();
+                tagsContainer.innerHTML = ''; // Clear existing tags
+
+                const allTag = document.createElement('button');
+                allTag.className = 'customer-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
+                allTag.textContent = 'Tất cả';
+                allTag.dataset.customerId = '';
+                tagsContainer.appendChild(allTag);
+
+                customerIds.forEach(id => {
+                    const tag = document.createElement('button');
+                    tag.className = 'customer-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
+                    tag.textContent = id;
+                    tag.dataset.customerId = id;
+                    tagsContainer.appendChild(tag);
+                });
+            };
+
+            const renderTickerTags = () => {
+                const tickers = [...new Set(stocks.map(stock => stock.ticker.toUpperCase()))].sort();
+                tickerTagsContainer.innerHTML = '';
+
+                tickers.forEach(id => {
+                    const tag = document.createElement('button');
+                    tag.className = 'ticker-tag px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-300 transition-colors';
+                    tag.textContent = id;
+                    tag.dataset.ticker = id;
+                    tickerTagsContainer.appendChild(tag);
+                });
+            };
+            
+            const updateActiveTags = () => {
+                const currentFilter = searchInput.value.toUpperCase();
+                document.querySelectorAll('.customer-tag').forEach(tag => {
+                    tag.classList.toggle('active', tag.dataset.customerId === currentFilter);
+                });
+                document.querySelectorAll('.ticker-tag').forEach(tag => {
+                    tag.classList.toggle('active', tag.dataset.ticker === currentFilter);
+                });
+            };
+
+            const renderStockList = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                stockListBody.innerHTML = '';
+
+                const filteredStocks = stocks
+                    .filter(stock => {
+                        const customerId = stock.customerId || '';
+                        const ticker = stock.ticker || '';
+                        return customerId.toLowerCase().includes(searchTerm) ||
+                               ticker.toLowerCase().includes(searchTerm);
+                    })
+                    .sort((a, b) => {
+                        const customerA = a.customerId || '';
+                        const customerB = b.customerId || '';
+                        const tickerA = a.ticker || '';
+                        const tickerB = b.ticker || '';
+                        return customerA.localeCompare(customerB) || tickerA.localeCompare(tickerB);
+                    });
+                
+                if (filteredStocks.length === 0 && stocks.length > 0) {
+                    stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-gray-500">Không tìm thấy kết quả phù hợp.</td></tr>`;
+                } else if (stocks.length === 0) {
+                     emptyState.classList.remove('hidden');
+                     stockListBody.innerHTML = '';
+                }
+                else {
+                    emptyState.classList.add('hidden');
+                    filteredStocks.forEach(stock => {
+                        const marketPrice = parseFloat(stock.marketPrice) || 0;
+                        const buyPrice = parseFloat(stock.buyPrice) || 0;
+                        let pnl = 0;
+                        if (marketPrice > 0 && buyPrice > 0) {
+                            pnl = ((marketPrice - buyPrice) / buyPrice) * 100;
+                        }
+
+                        const pnlColor = pnl > 0 ? 'text-green-600' : pnl < 0 ? 'text-red-600' : 'text-gray-700';
+                        const pnlSign = pnl > 0 ? '+' : '';
+
+                        const stockItem = document.createElement('tr');
+                        stockItem.className = 'stock-item lg:table-row bg-white border-b hover:bg-gray-50 fade-in';
+                        stockItem.innerHTML = `
+                            <td class="stock-cell lg:table-cell px-6 py-4 font-medium text-gray-900" data-label="Mã KH">${(stock.customerId || '').toUpperCase()}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4 font-medium" data-label="Mã CP">${(stock.ticker || '').toUpperCase()}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4" data-label="Ngày giờ thêm">${stock.dateAdded || ''}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4" data-label="Giá Mua">${buyPrice.toFixed(2)}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4 font-bold" data-label="Giá TT">${marketPrice > 0 ? marketPrice.toFixed(2) : 'N/A'}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4 font-semibold ${pnlColor}" data-label="Lãi/Lỗ">${marketPrice > 0 ? pnlSign + pnl.toFixed(2) + '%' : 'N/A'}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4 text-green-600 font-semibold" data-label="Giá Mục Tiêu">${parseFloat(stock.targetPrice || 0).toFixed(2)}</td>
+                            <td class="stock-cell lg:table-cell px-6 py-4 text-red-600 font-semibold" data-label="Giá Cắt Lỗ">${parseFloat(stock.stopLoss || 0).toFixed(2)}</td>
+                            <td class="stock-cell actions-cell lg:table-cell px-6 py-4 text-center" data-label="Hành động">
+                                <button data-id="${stock.id}" class="edit-btn font-medium text-blue-600 hover:text-blue-800 p-1">Sửa</button>
+                                <button data-id="${stock.id}" class="delete-btn font-medium text-red-600 hover:text-red-800 p-1">Xóa</button>
+                            </td>
+                        `;
+                        stockListBody.appendChild(stockItem);
+                    });
+                }
+                updateActiveTags();
+            };
+
+            const fetchStocks = async () => {
+                try {
+                    const response = await fetch(SHEETDB_API_URL);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    stocks = data.filter(s => s.id && s.customerId).map(s => ({...s}));
+                    
+                    renderStockList();
+                    renderCustomerTags();
+                    renderTickerTags();
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                    stockListBody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-red-500"><strong>Lỗi!</strong> Không thể tải dữ liệu từ Google Sheet.</td></tr>`;
+                }
+            };
+
+            const triggerScriptAndUpdate = async () => {
+                if (SCRIPT_URL === 'DÁN_URL_CỦA_BẠN_VÀO_ĐÂY' || !SCRIPT_URL) {
+                    alert('Vui lòng dán URL ứng dụng web của bạn vào biến SCRIPT_URL trong mã nguồn trước.');
+                    return;
+                }
+                
+                refreshBtn.disabled = true;
+                refreshBtnText.textContent = 'Đang cập nhật...';
+                refreshIcon.classList.add('animate-spin');
+
+                try {
+                    // Bước 1: Kích hoạt Apps Script
+                    await fetch(SCRIPT_URL);
+                    
+                    // Chờ một chút để Google Sheet có thời gian tính toán lại công thức
+                    await new Promise(resolve => setTimeout(resolve, 3000)); 
+
+                    // Bước 2: Tải lại dữ liệu mới từ SheetDB
+                    await fetchStocks();
+
+                } catch (error) {
+                    console.error("Lỗi khi làm mới giá:", error);
+                    alert("Đã xảy ra lỗi khi cố gắng làm mới giá.");
+                } finally {
+                    refreshBtn.disabled = false;
+                    refreshBtnText.textContent = 'Làm mới giá';
+                    refreshIcon.classList.remove('animate-spin');
+                }
+            };
+
+            const openEditModal = (stockId) => {
+                const stock = stocks.find(s => s.id === stockId);
+                if (!stock) return;
+                document.getElementById('edit-id').value = stock.id;
+                document.getElementById('edit-customer-id').value = stock.customerId;
+                document.getElementById('edit-ticker').value = stock.ticker;
+                document.getElementById('edit-buy-price').value = stock.buyPrice;
+                document.getElementById('edit-target-price').value = stock.targetPrice;
+                document.getElementById('edit-stop-loss').value = stock.stopLoss;
+                editModal.classList.remove('hidden');
+            };
+
+            const closeEditModal = () => {
+                editModal.classList.add('hidden');
+            };
+
+            // --- Event Listeners ---
+
+            stockForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                addBtn.disabled = true;
+                addBtn.textContent = 'Đang thêm...';
+
+                const newStock = {
+                    id: Date.now(),
+                    customerId: document.getElementById('customer-id').value.toUpperCase(),
+                    ticker: document.getElementById('ticker').value.toUpperCase(),
+                    buyPrice: document.getElementById('buy-price').value,
+                    targetPrice: document.getElementById('target-price').value,
+                    stopLoss: document.getElementById('stop-loss').value,
+                    dateAdded: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'medium' })
+                };
+
+                try {
+                    const response = await fetch(SHEETDB_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: [newStock] })
+                    });
+                    if (!response.ok) throw new Error('Failed to add stock.');
+                    await triggerScriptAndUpdate();
+                    stockForm.reset();
+                    document.getElementById('customer-id').focus();
+                } catch (error) {
+                    console.error("Add error:", error);
+                    alert('Đã xảy ra lỗi khi thêm cổ phiếu.');
+                } finally {
+                    addBtn.disabled = false;
+                    addBtn.textContent = 'Thêm';
+                }
+            });
+
+            stockListBody.addEventListener('click', async (e) => {
+                const stockId = e.target.dataset.id;
+                if (!stockId) return;
+
+                if (e.target.classList.contains('delete-btn')) {
+                    e.target.textContent = 'Đang xóa...';
+                    e.target.disabled = true;
+
+                    try {
+                        const response = await fetch(`${SHEETDB_API_URL}/id/${stockId}`, { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Failed to delete.');
+                        await fetchStocks();
+                    } catch(error) {
+                        console.error("Delete error:", error);
+                        alert('Đã xảy ra lỗi khi xóa.');
+                        e.target.textContent = 'Xóa';
+                        e.target.disabled = false;
+                    }
+                }
+
+                if (e.target.classList.contains('edit-btn')) {
+                    openEditModal(stockId);
+                }
+            });
+
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                saveEditBtn.disabled = true;
+                saveEditBtn.textContent = 'Đang lưu...';
+
+                const stockId = document.getElementById('edit-id').value;
+                const updatedData = {
+                    customerId: document.getElementById('edit-customer-id').value.toUpperCase(),
+                    ticker: document.getElementById('edit-ticker').value.toUpperCase(),
+                    buyPrice: document.getElementById('edit-buy-price').value,
+                    targetPrice: document.getElementById('edit-target-price').value,
+                    stopLoss: document.getElementById('edit-stop-loss').value,
+                };
+
+                try {
+                    const response = await fetch(`${SHEETDB_API_URL}/id/${stockId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: updatedData })
+                    });
+                    if (!response.ok) throw new Error('Failed to update.');
+                    await triggerScriptAndUpdate();
+                    closeEditModal();
+                } catch (error) {
+                    console.error("Update error:", error);
+                    alert('Đã xảy ra lỗi khi cập nhật.');
+                } finally {
+                    saveEditBtn.disabled = false;
+                    saveEditBtn.textContent = 'Lưu thay đổi';
+                }
+            });
+
+            tagsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('customer-tag')) {
+                    const customerId = e.target.dataset.customerId;
+                    searchInput.value = customerId;
+                    renderStockList();
+                }
+            });
+            
+            tickerTagsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('ticker-tag')) {
+                    const ticker = e.target.dataset.ticker;
+                    searchInput.value = ticker;
+                    renderStockList();
+                }
+            });
+
+            refreshBtn.addEventListener('click', triggerScriptAndUpdate);
+            cancelEditBtn.addEventListener('click', closeEditModal);
+            searchInput.addEventListener('input', renderStockList);
+
+            // --- Initial Load ---
+            fetchStocks();
+        });
+    </script>
+</body>
+</html>
