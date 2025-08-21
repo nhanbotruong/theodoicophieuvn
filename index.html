@@ -345,7 +345,19 @@
                         }
                         return fetchWithApiRotation(path, options);
                     }
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+                        if (errorMessage.toLowerCase().includes('limit') || errorMessage.toLowerCase().includes('quota')) {
+                            console.warn(`API key ${currentApiIndex} may have reached its limit (message). Switching...`);
+                            currentApiIndex++;
+                            if (currentApiIndex >= SHEETDB_API_URLS.length) {
+                                throw new Error("Tất cả các API key đã hết lượt sử dụng.");
+                            }
+                            return fetchWithApiRotation(path, options);
+                        }
+                        throw new Error(errorMessage);
+                    }
                     return response;
                 } catch (error) {
                     console.error("API Fetch Error:", error);
