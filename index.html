@@ -116,19 +116,19 @@
                 </div>
                 <div>
                     <label for="buy-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Mua <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
-                    <input type="number" id="buy-price" placeholder="28.500" step="0.001" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="buy-price" placeholder="28,500" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                  <div>
                     <label for="market-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá TT <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
-                    <input type="number" id="market-price" placeholder="29.500" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="market-price" placeholder="29,500" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label for="target-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Chốt Lời <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
-                    <input type="number" id="target-price" placeholder="35.000" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="target-price" placeholder="35,000" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label for="stop-loss" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Cắt Lỗ <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
-                    <input type="number" id="stop-loss" placeholder="25.000" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="stop-loss" placeholder="25,000" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <button type="submit" id="add-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors">
                     Thêm
@@ -241,19 +241,19 @@
                         </div>
                         <div>
                             <label for="edit-buy-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Mua <br><span class="text-xs text-gray-500 font-normal">(Bắt buộc)</span></label>
-                            <input type="number" id="edit-buy-price" step="0.001" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="edit-buy-price" required class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="edit-market-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá TT <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
-                            <input type="number" id="edit-market-price" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="edit-market-price" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="edit-target-price" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Chốt Lời <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
-                            <input type="number" id="edit-target-price" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="edit-target-price" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
                             <label for="edit-stop-loss" class="block text-sm font-medium text-gray-700 mb-1 h-10">Giá Cắt Lỗ <br><span class="text-xs text-gray-500 font-normal">(Tùy chọn)</span></label>
-                            <input type="number" id="edit-stop-loss" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="edit-stop-loss" class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     <div class="items-center px-4 py-3 mt-6 flex justify-end gap-3 bg-gray-50 -mx-5 -mb-5 rounded-b-xl">
@@ -522,7 +522,13 @@
                 try {
                     const response = await fetchWithApiRotation();
                     const data = await response.json();
-                    stocks = data.filter(s => s.id && s.customerId).map(s => ({...s}));
+                    stocks = data.filter(s => s.id && s.customerId).map(s => {
+                        s.buyPrice = (s.buyPrice || '0').toString().replace(',', '.');
+                        s.marketPrice = (s.marketPrice || '0').toString().replace(',', '.');
+                        s.targetPrice = (s.targetPrice || '0').toString().replace(',', '.');
+                        s.stopLoss = (s.stopLoss || '0').toString().replace(',', '.');
+                        return s;
+                    });
                     renderStockList();
                     renderCustomerTags();
                     renderTickerTags();
@@ -540,10 +546,10 @@
                 document.getElementById('edit-id').value = stock.id;
                 document.getElementById('edit-customer-id').value = stock.customerId;
                 document.getElementById('edit-ticker').value = stock.ticker;
-                document.getElementById('edit-buy-price').value = stock.buyPrice;
-                document.getElementById('edit-market-price').value = stock.marketPrice || '';
-                document.getElementById('edit-target-price').value = stock.targetPrice;
-                document.getElementById('edit-stop-loss').value = stock.stopLoss;
+                document.getElementById('edit-buy-price').value = (stock.buyPrice || '').toString().replace('.', ',');
+                document.getElementById('edit-market-price').value = (stock.marketPrice || '').toString().replace('.', ',');
+                document.getElementById('edit-target-price').value = (stock.targetPrice || '').toString().replace('.', ',');
+                document.getElementById('edit-stop-loss').value = (stock.stopLoss || '').toString().replace('.', ',');
                 editModal.classList.remove('hidden');
             };
             
@@ -586,11 +592,11 @@
                     id: Date.now(),
                     customerId: customerIdInput,
                     ticker: tickerInput,
-                    buyPrice: document.getElementById('buy-price').value,
-                    targetPrice: document.getElementById('target-price').value,
-                    stopLoss: document.getElementById('stop-loss').value,
+                    buyPrice: document.getElementById('buy-price').value.replace(',', '.'),
+                    targetPrice: document.getElementById('target-price').value.replace(',', '.'),
+                    stopLoss: document.getElementById('stop-loss').value.replace(',', '.'),
                     dateAdded: new Date().toLocaleString('vi-VN', { timeStyle: 'medium', dateStyle: 'short' }).replace(/, /g, ' '),
-                    marketPrice: document.getElementById('market-price').value || ''
+                    marketPrice: document.getElementById('market-price').value.replace(',', '.') || ''
                 };
                 try {
                     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [newStock] }) };
@@ -634,11 +640,10 @@
                 const updatedData = {
                     customerId: document.getElementById('edit-customer-id').value.toUpperCase(),
                     ticker: document.getElementById('edit-ticker').value.toUpperCase(),
-                    buyPrice: document.getElementById('edit-buy-price').value,
-                    targetPrice: document.getElementById('edit-target-price').value,
-                    stopLoss: document.getElementById('edit-stop-loss').value,
-                    marketPrice: document.getElementById('edit-market-price').value || '',
-                    dateAdded: new Date().toLocaleString('vi-VN', { timeStyle: 'medium', dateStyle: 'short' }).replace(/, /g, ' ')
+                    buyPrice: document.getElementById('edit-buy-price').value.replace(',', '.'),
+                    targetPrice: document.getElementById('edit-target-price').value.replace(',', '.'),
+                    stopLoss: document.getElementById('edit-stop-loss').value.replace(',', '.'),
+                    marketPrice: document.getElementById('edit-market-price').value.replace(',', '.') || ''
                 };
                 try {
                     const options = { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: updatedData }) };
