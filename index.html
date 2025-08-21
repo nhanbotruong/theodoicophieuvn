@@ -637,7 +637,8 @@
                     buyPrice: document.getElementById('edit-buy-price').value,
                     targetPrice: document.getElementById('edit-target-price').value,
                     stopLoss: document.getElementById('edit-stop-loss').value,
-                    marketPrice: document.getElementById('edit-market-price').value || ''
+                    marketPrice: document.getElementById('edit-market-price').value || '',
+                    dateAdded: new Date().toLocaleString('vi-VN', { timeStyle: 'medium', dateStyle: 'short' }).replace(/, /g, ' ')
                 };
                 try {
                     const options = { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: updatedData }) };
