@@ -592,41 +592,42 @@
                 confirmModal.classList.remove('hidden');
             };
 
-            const setupRRCalculations = (formPrefix) => {
-                const buyPriceEl = document.getElementById(`${formPrefix}buy-price`);
-                const targetPriceEl = document.getElementById(`${formPrefix}target-price`);
-                const stopLossEl = document.getElementById(`${formPrefix}stop-loss`);
-                const rrRatioEl = document.getElementById(`${formPrefix}rr-ratio`);
+            const setupRRCalculations = (formId) => {
+                const form = document.getElementById(formId);
+                const buyPriceEl = form.querySelector('[id*="buy-price"]');
+                const targetPriceEl = form.querySelector('[id*="target-price"]');
+                const stopLossEl = form.querySelector('[id*="stop-loss"]');
+                const rrRatioEl = form.querySelector('[id*="rr-ratio"]');
 
-                const updateRR = () => {
+                const calculate = (event) => {
                     const buyPrice = parsePrice(buyPriceEl.value);
                     const targetPrice = parsePrice(targetPriceEl.value);
                     const stopLoss = parsePrice(stopLossEl.value);
-                    if (buyPrice > 0 && targetPrice > 0 && stopLoss > 0 && buyPrice > stopLoss) {
+                    const rrRatio = parsePrice(rrRatioEl.value);
+                    
+                    const changedEl = event.target;
+
+                    if (buyPrice > 0 && stopLoss > 0 && buyPrice > stopLoss) {
                         const risk = buyPrice - stopLoss;
-                        const reward = targetPrice - buyPrice;
-                        if (risk > 0) {
-                            rrRatioEl.value = (reward / risk).toFixed(2);
+
+                        if (changedEl === targetPriceEl || changedEl === stopLossEl) {
+                            const reward = targetPrice - buyPrice;
+                            if (reward > 0) {
+                                rrRatioEl.value = (reward / risk).toFixed(2).replace('.', ',');
+                            }
+                        } 
+                        else if (changedEl === rrRatioEl && rrRatio > 0) {
+                            const reward = risk * rrRatio;
+                            const newTargetPrice = buyPrice + reward;
+                            targetPriceEl.value = newTargetPrice.toFixed(3).replace('.', ',');
                         }
                     }
                 };
 
-                const updatePrices = () => {
-                    const buyPrice = parsePrice(buyPriceEl.value);
-                    const stopLoss = parsePrice(stopLossEl.value);
-                    const rrRatio = parsePrice(rrRatioEl.value);
-                    if (buyPrice > 0 && stopLoss > 0 && rrRatio > 0 && buyPrice > stopLoss) {
-                        const risk = buyPrice - stopLoss;
-                        const reward = risk * rrRatio;
-                        const newTargetPrice = buyPrice + reward;
-                        targetPriceEl.value = newTargetPrice.toFixed(3).replace('.', ',');
-                    }
-                };
-
-                buyPriceEl.addEventListener('input', updateRR);
-                targetPriceEl.addEventListener('input', updateRR);
-                stopLossEl.addEventListener('input', updateRR);
-                rrRatioEl.addEventListener('input', updatePrices);
+                buyPriceEl.addEventListener('input', calculate);
+                targetPriceEl.addEventListener('input', calculate);
+                stopLossEl.addEventListener('input', calculate);
+                rrRatioEl.addEventListener('input', calculate);
             };
 
             // --- Event Listeners ---
@@ -785,8 +786,8 @@
             // --- Initial Load ---
             loadAndCleanNewlyAdded();
             fetchStocks();
-            setupRRCalculations('');
-            setupRRCalculations('edit-');
+            setupRRCalculations('stock-form');
+            setupRRCalculations('edit-form');
         });
     </script>
 </body>
